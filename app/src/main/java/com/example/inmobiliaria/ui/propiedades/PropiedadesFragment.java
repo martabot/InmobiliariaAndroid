@@ -14,95 +14,79 @@ import android.widget.Spinner;
 import android.widget.Switch;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 import com.example.inmobiliaria.MainActivity;
 import com.example.inmobiliaria.Principal;
 import com.example.inmobiliaria.R;
 import com.example.inmobiliaria.model.Propiedad;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.tabs.TabLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PropiedadesFragment extends Fragment {
-    private EditText direccion,ambientes,precio;
-    private Spinner propiedad,tipo,uso;
-    private Switch disponible;
-    private Button guardar;
-    private int lastSelection;
+
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
+    private AppBarLayout appBar;
+    private int i=1;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_propiedades, container, false);
         ((Principal) getActivity()).setActionBarTitle("Propiedades");
 
-        propiedad=root.findViewById(R.id.propiedad);
-        direccion=root.findViewById(R.id.direccion);
-        ambientes=root.findViewById(R.id.ambientes);
-        precio=root.findViewById(R.id.precio);
-        tipo=root.findViewById(R.id.tipo);
-        uso=root.findViewById(R.id.uso);
-        disponible=root.findViewById(R.id.disponible);
+        viewPager=root.findViewById(R.id.viewPager);
+        appBar=root.findViewById(R.id.appBar);
+        tabLayout=new TabLayout(getContext());
 
-        guardar=root.findViewById(R.id.guardar);
+        appBar.addView(tabLayout);
 
-        ArrayAdapter<CharSequence> adapter=ArrayAdapter.createFromResource(getContext(),R.array.direcciones,android.R.layout.simple_spinner_item);
-        propiedad.setAdapter(adapter);
-        propiedad.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                fijarDatos(position);
-            }
+        ViewPageAdapter vpa=new ViewPageAdapter(getChildFragmentManager());
+        for( Propiedad p : MainActivity.propiedades){
+            vpa.addFragment(new ItemPropiedad(p),""+i++);
+        }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                propiedad.setSelection(0);
-                fijarDatos(0);
-            }
-        });
-
-        guardar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new AlertDialog.Builder(getContext()).setTitle("").setMessage("Desea cambiar la disponibilidad?").setPositiveButton("SI", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        aceptar();
-                    }
-                }).setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Propiedad elegida=MainActivity.propiedades.get(lastSelection);
-                        disponible.setChecked(elegida.isDisponible());
-                    }
-                }).show();
-            }
-        });
+        viewPager.setAdapter(vpa);
+        tabLayout.setupWithViewPager(viewPager);
 
         return root;
     }
 
-    public void fijarDatos(int position){
-        Propiedad elegida=MainActivity.propiedades.get(position);
-        lastSelection=position;
+    public  class ViewPageAdapter extends FragmentPagerAdapter{
+        private List<Fragment> fragmentList= new ArrayList<>();
+        private List<String> titulos=new ArrayList<>();
 
-        direccion.setText(elegida.getDireccion());
-        ambientes.setText(String.valueOf(elegida.getAmbientes()));
-        precio.setText(String.valueOf(elegida.getPrecio()));
+         public ViewPageAdapter(FragmentManager fm) {
+            super(fm);
+        }
 
-        ArrayAdapter<CharSequence> adapterTipo=ArrayAdapter.createFromResource(getContext(),R.array.tipos,android.R.layout.simple_spinner_item);
-        tipo.setAdapter(adapterTipo);
-        tipo.setSelection(adapterTipo.getPosition(elegida.getTipo()));
-        tipo.setEnabled(false);
+        @Override
+        public Fragment getItem(int position) {
+            return fragmentList.get(position);
+        }
 
-        ArrayAdapter<CharSequence> adapterUso=ArrayAdapter.createFromResource(getContext(),R.array.usos,android.R.layout.simple_spinner_item);
-        uso.setAdapter(adapterUso);
-        uso.setSelection(adapterUso.getPosition(elegida.getUso()));
-        uso.setEnabled(false);
+        @Override
+        public int getCount() {
+            return fragmentList.size();
+        }
 
-        disponible.setChecked(elegida.isDisponible());
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return titulos.get(position);
+        }
 
-    }
+        public void addFragment(Fragment fragment,String titulo){
+             fragmentList.add(fragment);
+             titulos.add(titulo);
+        }
 
-    public void aceptar(){
-        Propiedad elegida=MainActivity.propiedades.get(lastSelection);
-         elegida.setDisponible(disponible.isChecked());
     }
 }
